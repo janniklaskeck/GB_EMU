@@ -64,12 +64,6 @@ u8 IO::ReadByte(u16 address)
 		return EMU::GetPPU()->ReadOAM_Byte(address);
 	}
 
-	if (address == 0xFF44)
-	{
-		static u8 a;
-		return a++;
-	}
-
 	return 0;
 }
 
@@ -113,6 +107,12 @@ void IO::WriteByte(u16 address, u8 value)
 		}
 
 		EMU::GetPPU()->WriteOAM_Byte(address, value);
+		return;
+	}
+
+	if (address == 0xFFFF)
+	{
+		EMU::GetEMU()->GetCPU()->SetInterruptEnabledFlags(value);
 		return;
 	}
 }

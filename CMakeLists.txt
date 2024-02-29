@@ -6,6 +6,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 ###############################################################################
 # Set build features
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_STANDARD 20)
 
 ###############################################################################
 include(CheckCSourceCompiles)
@@ -52,14 +53,14 @@ if(WIN32)
   set(SDL2-TTF_VERSION "2.22.0")
   set(SDL2-IMAGE_VERSION "2.8.2")
 
-  set(SDL2_DIR "${PROJECT_SOURCE_DIR}/ext/SDL2-${SDL2_VERSION}")
+  set(SDL2_DIR "${PROJECT_SOURCE_DIR}/libs/SDL2-${SDL2_VERSION}")
   set(SDL2_INCLUDE_DIRS "${SDL2_DIR}/include;${SDL2_DIR}/include/SDL2")
 
   set(SDL2_LIBRARIES "${SDL2_DIR}/lib/x64/SDL2.lib;${SDL2_DIR}/lib/x64/SDL2main.lib")
 
   string(STRIP "${SDL2_LIBRARIES}" SDL2_LIBRARIES)
 
-  set(SDL2_TTF_DIR "${PROJECT_SOURCE_DIR}/ext/SDL2_ttf-${SDL2-TTF_VERSION}")
+  set(SDL2_TTF_DIR "${PROJECT_SOURCE_DIR}/libs/SDL2_ttf-${SDL2-TTF_VERSION}")
   set(SDL2_TTF_INCLUDE_DIRS "${SDL2_TTF_DIR}/include")
 
   set(SDL2_TTF_LIBRARIES "${SDL2_TTF_DIR}/lib/x64/SDL2_ttf.lib")
@@ -68,6 +69,8 @@ if(WIN32)
 
   cmake_print_variables(SDL2_INCLUDE_DIRS)
 endif()
+
+
 
 ###############################################################################
 # Generate "config.h" from "cmake/config.h.cmake"

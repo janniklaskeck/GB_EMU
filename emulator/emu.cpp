@@ -14,7 +14,7 @@
 
 using namespace GB;
 
-/* 
+/*
   Emu components:
 
   |Cart|
@@ -40,13 +40,16 @@ EMU::EMU()
 
 int EMU::Run(int argc, char** argv)
 {
-	if (argc < 2)
+	if (argc < 3)
 	{
-		printf("Usage: emu <rom_file>\n");
+		printf("Usage: <rom_folder> <rom_file>\n");
 		return -1;
 	}
 
-	if (!cartridge->Load(argv[1]))
+	std::string romPath = argv[1];
+	romPath += argv[2];
+
+	if (!cartridge->Load(romPath))
 	{
 		printf("Failed to load ROM file: %s\n", argv[1]);
 		return -2;
@@ -57,7 +60,7 @@ int EMU::Run(int argc, char** argv)
 	bIsRunning = true;
 
 	std::thread cpuThread(&EMU::ExecuteCPU, this);
-	
+
 	while (bIsRunning)
 	{
 		window->Delay(1);
@@ -126,8 +129,8 @@ void* EMU::ExecuteCPU()
 		}
 
 		Ticks++;
-		
-		cpu->Sleep(1);
+
+		//cpu->Sleep(1);
 	}
 
 	return nullptr;

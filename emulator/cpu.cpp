@@ -7,8 +7,15 @@
 #include <thread>
 #include <chrono>
 #include <format>
+#include <fstream>
 
 using namespace GB;
+
+//#define GB_DOCTOR
+
+#ifdef GB_DOCTOR
+std::ofstream gbdFile("gbd.log");
+#endif
 
 CPU::CPU()
 {
@@ -45,19 +52,40 @@ bool CPU::Step()
 		}
 
 		const std::string debug = std::format("{:08X} - {:04X} {:12} ({:02X} {:02X} {:02X}) A: {:02X} F: {} BC: {:02X}{:02X} DE: {:02X}{:02X} HL: {:02X}{:02X}\n",
-					EMU::GetEMU()->GetCycles(),
-					PC,
-					GetInstructionDebugString().c_str(),
-					opcode,
-					EMU::GetBUS()->ReadByte(PC + 1),
-					EMU::GetBUS()->ReadByte(PC + 2),
-					registers.A, registers.GetFlagsString().c_str(),
-					registers.B, registers.C,
-					registers.D, registers.E,
-					registers.H, registers.L);
+											  EMU::GetEMU()->GetCycles(),
+											  PC,
+											  GetInstructionDebugString().c_str(),
+											  opcode,
+											  EMU::GetBUS()->ReadByte(PC + 1),
+											  EMU::GetBUS()->ReadByte(PC + 2),
+											  registers.A, registers.GetFlagsString().c_str(),
+											  registers.B, registers.C,
+											  registers.D, registers.E,
+											  registers.H, registers.L);
 
-		printf(debug.c_str());
+		//if (EMU::GetEMU()->GetCycles() % 100000 == 0)
+			printf(debug.c_str());
 
+#ifdef GB_DOCTOR
+
+		const std::string gbDoctor = std::format("A:{:02X} F:{:02X} B:{:02X} C:{:02X} D:{:02X} E:{:02X} H:{:02X} L:{:02X} SP:{:04X} PC:{:04X} PCMEM:{:02X},{:02X},{:02X},{:02X}\n",
+											  registers.A,
+											  registers.F,
+											  registers.B,
+											  registers.C,
+											  registers.D,
+											  registers.E,
+											  registers.H,
+											  registers.L,
+											  registers.SP,
+											  PC,
+											  EMU::GetBUS()->ReadByte(PC),
+											  EMU::GetBUS()->ReadByte(PC+1),
+											  EMU::GetBUS()->ReadByte(PC+2),
+											  EMU::GetBUS()->ReadByte(PC+3)
+		);
+		gbdFile << gbDoctor;
+#endif
 
 		EMU::GetEMU()->DebugUpdate();
 		EMU::GetEMU()->DebugPrint();
@@ -164,11 +192,11 @@ void CPU::HandleInterrupts()
 		{
 			Stack_PushWord(registers.Read(RT_PC));
 			registers.Write(RT_PC, address);
-			
+
 			IF_Flags &= ~type;
 			halted = false;
 			interruptsEnabled = false;
-			
+
 			return true;
 		}
 

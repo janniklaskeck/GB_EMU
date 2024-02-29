@@ -19,15 +19,17 @@ Window::Window()
 	printf("TTF INIT\n");
 
 	SDL_CreateWindowAndRenderer(mainWindowWidth, mainWindowHeight, 0, &sdlWindow, &sdlRenderer);
+	SDL_SetWindowTitle(sdlWindow, "GB EMU");
 
 	constexpr int debugWidth = 16 * 8 * debugScale;
 	constexpr int debugHeight = 32 * 8 * debugScale;
 
 	SDL_CreateWindowAndRenderer(debugWidth, debugHeight, 0, &debug_sdlWindow, &debug_sdlRenderer);
+	SDL_SetWindowTitle(debug_sdlWindow, "GB EMU - TileDebug");
 
-	debug_sdlSurface = SDL_CreateRGBSurface(0, 
-											debugWidth + (16 * debugScale), 
-											debugHeight + (64 * debugScale), 
+	debug_sdlSurface = SDL_CreateRGBSurface(0,
+											debugWidth + (16 * debugScale),
+											debugHeight + (64 * debugScale),
 											32,
 											0x00FF0000,
 											0x0000FF00,
@@ -81,7 +83,7 @@ void Window::UpdateDebugWindow()
 	u16 xDraw = 0;
 	u16 yDraw = 0;
 	u16 tileNum = 0;
-	
+
 	SDL_Rect screenRect{};
 	screenRect.w = debug_sdlSurface->w;
 	screenRect.h = debug_sdlSurface->h;
@@ -113,7 +115,7 @@ void Window::drawTile(u16 tileNum, u16 xDraw, u16 yDraw)
 	constexpr std::array<u32, 4> tileColors = { 0xFFFFFFFF, 0xFFAAAAAA, 0xFF555555, 0xFF000000 };
 
 	SDL_Rect tileRect;
-	
+
 	for (u8 tileY = 0; tileY < 16; tileY++)
 	{
 		const u16 address = RAM_ADDR::VRAM_START + (tileNum * 16) + tileY;

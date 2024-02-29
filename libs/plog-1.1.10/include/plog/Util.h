@@ -65,6 +65,7 @@
 #   include <sys/timeb.h>
 #   include <io.h>
 #   include <share.h>
+#   include <corecrt_io.h>
 #else
 #   include <unistd.h>
 #   include <sys/time.h>

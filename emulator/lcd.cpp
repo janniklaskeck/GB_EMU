@@ -28,7 +28,13 @@ u8 LCD::ReadByte(u16 address)
 {
 	if (address == 0xFF44)
 	{
-		return 0x90;
+		if (address == 0xFF44)
+		{
+			static u8 a = 0;
+			return a++;
+		}
+
+		//return 0x90;
 	}
 
 	return 0;

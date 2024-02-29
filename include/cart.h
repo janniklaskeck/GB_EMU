@@ -45,7 +45,7 @@ namespace GB
 
 	public:
 
-		bool Load(char* CartridgeFilePath);
+		bool Load(std::string path);
 
 		u8 ReadByte(u16 address) const;
 

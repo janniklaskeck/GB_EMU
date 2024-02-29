@@ -111,15 +111,13 @@ std::string Cartridge::INVALID_ROM_TYPE = "INVALID_ROM_TYPE";
 
 std::string Cartridge::INVALID_LICENSE_CODE = "INVALID_LICENSE";
 
-bool Cartridge::Load(char* CartridgeFilePath)
+bool Cartridge::Load(std::string path)
 {
-	snprintf(filename, sizeof(filename), "%s", CartridgeFilePath);
-
-	FILE* fp = fopen(CartridgeFilePath, "r");
+	FILE* fp = fopen(path.c_str(), "r");
 
 	if (!fp)
 	{
-		printf("Failed to open: %s\n", CartridgeFilePath);
+		printf("Failed to open: %s\n", path.c_str());
 		return false;
 	}
 
