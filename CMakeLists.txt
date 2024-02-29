@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16.1 FATAL_ERROR)
 
-project(gbemu)
+project(GB_EMU)
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 ###############################################################################
@@ -67,8 +67,6 @@ if(WIN32)
   string(STRIP "${SDL2_TTF_LIBRARIES}" SDL2_TTF_LIBRARIES)
 
   cmake_print_variables(SDL2_INCLUDE_DIRS)
-else()
-
 endif()
 
 ###############################################################################
@@ -82,8 +80,8 @@ set(CONFIG_HEADER ${CMAKE_CURRENT_BINARY_DIR}/config.h)
 
 ###############################################################################
 # Subdirectories
-add_subdirectory(lib)
 add_subdirectory(gbemu)
+add_subdirectory(emulator)
 add_subdirectory(tests)
 
 ###############################################################################
