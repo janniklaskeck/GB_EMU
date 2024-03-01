@@ -24,8 +24,6 @@ namespace GB
 
 	private:
 
-		LCD lcd;
-
 		std::array<u8, 2> serialData{};
 	};
 }

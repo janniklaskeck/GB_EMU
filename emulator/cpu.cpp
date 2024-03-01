@@ -64,7 +64,7 @@ bool CPU::Step()
 											  registers.H, registers.L);
 
 		//if (EMU::GetEMU()->GetCycles() % 100000 == 0)
-			printf(debug.c_str());
+			//printf(debug.c_str());
 
 #ifdef GB_DOCTOR
 

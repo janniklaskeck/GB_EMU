@@ -5,93 +5,206 @@
 
 namespace GB
 {
+	enum class LCD_Mode : u8
+	{
+		HBLANK = 0,
+		VBLANK,
+		OAM,
+		XFER
+	};
+
+	enum class LCDS_Int_Src : u8
+	{
+		HBLANK = 1 << 3,
+		VBLANK = 1 << 4,
+		OAM = 1 << 5,
+		LYC = 1 << 6
+	};
+
 	class LCD
 	{
 
 	public:
-		LCD() = default;
-
+		LCD();
 
 		u8 ReadByte(u16 address);
 
-		static bool IsControlAddress(u16 address);
+		void WriteByte(u16 address, u8 value);
 
-		static bool IsStatusAddress(u16 address);
+		static bool IsLCDAddress(u16 address);
 
-		static bool IsPosScrollAddress(u16 address);
+	public:
 
-		static bool IsBCPSAddress(u16 address);
+		// Control flags
+
+		// LCD& PPU enable : 0 = Off; 1 = On
+		// Window tile map area : 0 = 9800–9BFF; 1 = 9C00–9FFF
+		// Window enable : 0 = Off; 1 = On
+		// BG & Window tile data area : 0 = 8800–97FF; 1 = 8000–8FFF
+		// BG tile map area : 0 = 9800–9BFF; 1 = 9C00–9FFF
+		// OBJ size : 0 = 8×8; 1 = 8×16
+		// OBJ enable : 0 = Off; 1 = On
+		// BG & Window enable / priority[Different meaning in CGB Mode]: 0 = Off; 1 = On
+
+		u8 Get_BG_Window_Enable_Prio() const
+		{
+			return BIT(controlFlags, 0);
+		}
+
+		u8 Get_OBJ_Enable() const
+		{
+			return BIT(controlFlags, 1);
+		}
+
+		u8 Get_OBJ_Size() const
+		{
+			return BIT(controlFlags, 2) ? 16 : 8;
+		}
+
+		u8 Get_BG_TileMap() const
+		{
+			return BIT(controlFlags, 3) ? 0x9C00 : 0x9800;
+		}
+
+		u8 Get_BG_Window_Tiles() const
+		{
+			return BIT(controlFlags, 4) ? 0x8000 : 0x8800;
+		}
+
+		u8 Get_Window_Enable() const
+		{
+			return BIT(controlFlags, 5);
+		}
+
+		u8 Get_Window_TileMap() const
+		{
+			return BIT(controlFlags, 6) ? 0x9C00 : 0x9800;
+		}
+
+		u8 Get_LCD_PPU_Enable() const
+		{
+			return BIT(controlFlags, 7);
+		}
+
+		u8 GetControlFlags() const
+		{
+			return controlFlags;
+		}
+
+		void WriteControlFlags(u8 newValue)
+		{
+			controlFlags = newValue;
+		}
+
+		// Status flags
+
+		// LYC int select(Read / Write) : If set, selects the LYC == LY condition for the STAT interrupt.
+		// Mode 2 int select(Read / Write) : If set, selects the Mode 2 condition for the STAT interrupt.
+		// Mode 1 int select(Read / Write) : If set, selects the Mode 1 condition for the STAT interrupt.
+		// Mode 0 int select(Read / Write) : If set, selects the Mode 0 condition for the STAT interrupt.
+		// LYC == LY(Read - only) : Set when LY contains the same value as LYC; it is constantly updated.
+		// PPU mode(Read - only) : Indicates the PPU’s current status.
+
+		LCD_Mode Get_PPU_Mode() const
+		{
+			return (LCD_Mode)(statusFlags & 0b11);
+		}
+
+		void Set_PPU_Mode(const LCD_Mode mode)
+		{
+			u8 modeByte = (u8)mode;
+			statusFlags &= ~0b11;
+			statusFlags |= modeByte;
+		}
+
+		u8 Get_LYC_EQ_LY() const
+		{
+			return BIT(statusFlags, 2);
+		}
+
+		u8 Get_Int_Src_Enabled(const LCDS_Int_Src source) const
+		{
+			return statusFlags & (u8)source;
+		}
+
+		u8 GetStatusFlags() const
+		{
+			return statusFlags;
+		}
+
+		void WriteStatusFlags(u8 newValue)
+		{
+			statusFlags = newValue;
+		}
+
+		u8 GetLY() const
+		{
+			return ly;
+		}
+
+		void SetLY(u8 newValue)
+		{
+			ly = newValue;
+		}
+
+		void IncrementLY();
 
 	private:
 
-		// Control flags
-		struct Control
+		void UpdatePallette(u8 palletteData, u8 pallette);
+
+	private:
+
+		u8 controlFlags = 0;
+		u8 statusFlags = 0;
+
+		u8 scrollX = 0;
+		u8 scrollY = 0;
+
+		u8 ly = 0;
+		u8 lyCompare = 0;
+
+		u8 dma = 0;
+
+		// DMG only
+		u8 DMG_BG_Pallette;
+		std::array<u8, 2> DMG_OBJ_Pallettes;
+		// ~DMG only
+
+		u8 windowX = 0;
+		u8 windowY = 0;
+
+		using DMG_Pallette_Colors = std::array<u32, 4>;
+
+		DMG_Pallette_Colors DMG_BG_Colors;
+		DMG_Pallette_Colors DMG_SP1_Colors;
+		DMG_Pallette_Colors DMG_SP2_Colors;
+
+		//CGB
+		struct CGB_BCPS
 		{
-			u8 BG_Window_Enabled_Priority : 1;
-			u8 objectEnabled : 1;
-			u8 ObjectSize : 1;
-			u8 BG_TileMapArea : 1;
-			u8 BG_Window_TileDataArea : 1;
-			u8 windowEnabled : 1;
-			u8 Window_TileMapArea : 1;
-			u8 enableLCD_PPU : 1;
+			u8 address;
+			u8 autoIncrement;
 		};
 
-		Control controlFlags{};
+		CGB_BCPS CGB_bcps{};
 
-		// Status flags
-		struct Status
+		struct CGB_Color
 		{
-			u8 PPU_Mode : 2;
-			u8 LYC_Equals_LY : 1;
-			u8 Mode0_int_select : 1;
-			u8 Mode1_int_select : 1;
-			u8 Mode2_int_select : 1;
-			u8 LYC_int_select : 1;
-			u8 dummy : 1;
+			u16 RedIntensity;
+			u16 GreenIntensity;
+			u16 BlueIntensity;
 		};
 
-		Status statusFlags{};
-
-		// PositionAndScrolling
-		struct PosAndScroll
+		struct CGB_Pallette
 		{
-			u8 sc_x;
-			u8 sc_y;
-
-			u8 w_x;
-			u8 w_y;
+			CGB_Color c0{};
+			CGB_Color c1{};
+			CGB_Color c2{};
+			CGB_Color c3{};
 		};
 
-		PosAndScroll posAndScroll{};
-
-		// Pallettes
-		struct BCPS
-		{
-			u8 address : 6;
-			u8 dummy : 1;
-			u8 autoIncrement : 1;
-		};
-
-		BCPS bcps{};
-
-		struct Color
-		{
-			u16 RedIntensity : 5;
-			u16 GreenIntensity : 5;
-			u16 BlueIntensity : 5;
-			u16 dummy : 1;
-		};
-
-		struct Pallette
-		{
-			Color c0{};
-			Color c1{};
-			Color c2{};
-			Color c3{};
-		};
-
-		std::array<Pallette, 8> BG_Pallets{};
-		std::array<Pallette, 8> OBJ_Pallets{};
+		std::array<CGB_Pallette, 8> CGB_BG_Pallettes{};
+		std::array<CGB_Pallette, 8> CGB_OBJ_Pallettes{};
 	};
 }

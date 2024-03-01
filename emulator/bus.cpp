@@ -40,18 +40,12 @@ u8 MEM_BUS::ReadByte(u16 address) const
 		return EMU::GetIO()->ReadByte(address);
 	}
 
-	if (PPU::IsOAM_Addr(address))
-	{
-		return EMU::GetPPU()->ReadOAM_Byte(address);
-	}
-
 	NO_IMPL("MemRead");
 	return 0;
 }
 
 void MEM_BUS::WriteByte(u16 address, u8 value)
 {
-
 	if (Cartridge::IsROM_Addr(address) || Cartridge::IsEXT_RAM_Addr(address))
 	{
 		EMU::GetCartridge()->WriteByte(address, value);
@@ -74,10 +68,6 @@ void MEM_BUS::WriteByte(u16 address, u8 value)
 	{
 		EMU::GetRAM()->WriteHRAM_Byte(address, value);
 		return;
-	}
-
-	if (Joypad::IsJoypad_Addr(address))
-	{
 	}
 
 	if (IO::IsIO_Addr(address))
@@ -121,12 +111,6 @@ void MEM_BUS::DMA_Tick()
 	dmaCurrentByte++;
 
 	dmaTransferActive = dmaCurrentByte < TOTAL_OAM_SIZE;
-
-	if (!dmaTransferActive)
-	{
-		printf("DMADONE\n");
-		EMU::GetCPU()->Sleep(2000);
-	}
 }
 
 bool MEM_BUS::DMA_TransferActive() const

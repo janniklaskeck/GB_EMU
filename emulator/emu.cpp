@@ -61,10 +61,19 @@ int EMU::Run(int argc, char** argv)
 
 	std::thread cpuThread(&EMU::ExecuteCPU, this);
 
+	u32 previousFrame = 0;
+
 	while (bIsRunning)
 	{
-		window->Delay(1);
-		window->UpdateWindow();
+		window->Delay(1000);
+		window->HandleEvents();
+
+		if (previousFrame != EMU::GetPPU()->GetCurrentFrame())
+		{
+			window->UpdateWindow();
+		}
+
+		previousFrame = EMU::GetPPU()->GetCurrentFrame();
 	}
 	cpuThread.join();
 
@@ -96,6 +105,7 @@ void EMU::Cycle(u8 amount)
 		{
 			GetEMU()->cycles++;
 			GetEMU()->timer->Tick(1);
+			GetEMU()->ppu->Tick();
 		}
 
 		GetBUS()->DMA_Tick();

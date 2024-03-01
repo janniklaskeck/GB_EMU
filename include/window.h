@@ -24,6 +24,8 @@ namespace GB
 
 		void UpdateWindow();
 
+		u32 GetTicks() const;
+
 	protected:
 
 		void UpdateMainWindow();

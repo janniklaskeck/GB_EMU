@@ -19,24 +19,9 @@ u8 IO::ReadByte(u16 address)
 		return serialData[1];
 	}
 
-	if (LCD::IsBCPSAddress(address))
+	if (LCD::IsLCDAddress(address))
 	{
-		return lcd.ReadByte(address);
-	}
-
-	if (LCD::IsControlAddress(address))
-	{
-		return lcd.ReadByte(address);
-	}
-
-	if (LCD::IsPosScrollAddress(address))
-	{
-		return lcd.ReadByte(address);
-	}
-
-	if (LCD::IsStatusAddress(address))
-	{
-		return lcd.ReadByte(address);
+		return EMU::GetLCD()->ReadByte(address);
 	}
 
 	if (Timer::IsTimer_Addr(address))
@@ -93,9 +78,9 @@ void IO::WriteByte(u16 address, u8 value)
 		return;
 	}
 
-	if (address == 0xFF46)
+	if (LCD::IsLCDAddress(address))
 	{
-		EMU::GetBUS()->DMA_Start(value);
+		EMU::GetLCD()->WriteByte(address, value);
 		return;
 	}
 

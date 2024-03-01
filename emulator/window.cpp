@@ -66,8 +66,6 @@ void Window::Delay(u32 MS)
 
 void Window::UpdateWindow()
 {
-	HandleEvents();
-
 	UpdateMainWindow();
 
 	UpdateDebugWindow();
@@ -136,4 +134,9 @@ void Window::drawTile(u16 tileNum, u16 xDraw, u16 yDraw)
 		}
 	}
 
+}
+
+u32 Window::GetTicks() const
+{
+	return SDL_GetTicks();
 }
