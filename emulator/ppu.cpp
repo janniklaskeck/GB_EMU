@@ -107,11 +107,11 @@ void PPU::TICK_HBLANK()
 		{
 			EMU::GetLCD()->Set_PPU_Mode(LCD_Mode::VBLANK);
 
-			EMU::GetCPU()->RequestInterrupt(IT_VBlank);
+			EMU::GetCPU()->RequestInterrupt(IntType::IT_VBlank);
 
 			if (EMU::GetLCD()->Get_Int_Src_Enabled(LCDS_Int_Src::VBLANK))
 			{
-				EMU::GetCPU()->RequestInterrupt(IT_LCD_Stat);
+				EMU::GetCPU()->RequestInterrupt(IntType::IT_LCD_Stat);
 			}
 
 			current_frame++;

@@ -135,7 +135,7 @@ void* EMU::ExecuteCPU()
 		if (!cpu->Step())
 		{
 			printf("CPU Stopped\n");
-			return 0;
+			return nullptr;
 		}
 
 		Ticks++;

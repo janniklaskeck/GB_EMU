@@ -7,8 +7,8 @@ using namespace GB;
 
 void CPU::Stack_PushByte(u8 value)
 {
-	registers.Decrement(RT_SP);
-	const u16 SP_Value = registers.Read(RT_SP);
+	registers.Decrement(RegisterType::SP);
+	const u16 SP_Value = registers.Read(RegisterType::SP);
 	EMU::GetBUS()->WriteByte(SP_Value, value);
 }
 
@@ -25,9 +25,9 @@ void CPU::Stack_PushWord(u16 value)
 
 u8 CPU::Stack_PopByte()
 {
-	const u16 SP_Value = registers.Read(RT_SP);
+	const u16 SP_Value = registers.Read(RegisterType::SP);
 	const u8 value = EMU::GetBUS()->ReadByte(SP_Value);
-	registers.Increment(RT_SP);
+	registers.Increment(RegisterType::SP);
 
 	return value;
 }
@@ -44,94 +44,47 @@ u16 CPU::Stack_PopWord()
 	return value;
 }
 
-bool CPU::IsConditionMet(const cond_type condition) const
+bool CPU::IsConditionMet(const CondType condition) const
 {
-	
+
 	switch (condition)
 	{
-	case CT_NZ: return !registers.GetZeroFlag();
-	case CT_Z: return registers.GetZeroFlag();
-	case CT_NC: return !registers.GetCarryFlag();
-	case CT_C: return registers.GetCarryFlag();
-	case CT_NONE:
-	default: return true;
-	}
-}
-
-Instr_Function CPU::GetFunction(const Instruction* instruction) const
-{
-	if (!instruction)
-	{
-		return nullptr;
-	}
-
-	switch (instruction->type)
-	{
-	case IN_NOP: return &CPU::Instruction_NOP;
-	case IN_LD: return &CPU::Instruction_LD;
-	case IN_LDH: return &CPU::Instruction_LDH;
-	case IN_INC: return &CPU::Instruction_INC;
-	case IN_DEC: return &CPU::Instruction_DEC;
-	case IN_RLCA: return &CPU::Instruction_RLCA;
-	case IN_ADD: return &CPU::Instruction_ADD;
-	case IN_ADC: return &CPU::Instruction_ADC;
-	case IN_SUB: return &CPU::Instruction_SUB;
-	case IN_SBC: return &CPU::Instruction_SBC;
-	case IN_RRCA: return &CPU::Instruction_RRCA;
-	case IN_CALL:
-	case IN_RST: return &CPU::Instruction_CALL_RST;
-	case IN_JR:
-	case IN_JP: return &CPU::Instruction_JP_JR;
-	case IN_RETI:
-	case IN_RET: return &CPU::Instruction_RET_RETI;
-	case IN_DI: return &CPU::Instruction_EI_DI;
-	case IN_EI: return &CPU::Instruction_EI_DI;
-	case IN_CB: return &CPU::Instruction_CB;
-	case IN_AND:
-	case IN_XOR:
-	case IN_OR: return &CPU::Instruction_AND_OR_XOR;
-	case IN_CP: return &CPU::Instruction_CP;
-	case IN_POP:
-	case IN_PUSH: return &CPU::Instruction_PUSH_POP;
-	case IN_STOP: return &CPU::Instruction_STOP;
-	case IN_HALT: return &CPU::Instruction_HALT;
-	case IN_RLA:
-	case IN_RRA: return &CPU::Instruction_RLA_RRA;
-	case IN_DAA: return &CPU::Instruction_DAA;
-	case IN_CPL: return &CPU::Instruction_CPL;
-	case IN_CCF:
-	case IN_SCF: return &CPU::Instruction_SCF_CCF;
+	case CondType::NZ: return !registers.GetZeroFlag();
+	case CondType::Z: return registers.GetZeroFlag();
+	case CondType::NC: return !registers.GetCarryFlag();
+	case CondType::C: return registers.GetCarryFlag();
+	case CondType::NONE: return true;
 	default:
+	{
+		exit(-7);
 		break;
-
 	}
-	
-	return nullptr;
+	}
 }
 
-void CPU::Instruction_NOP(const Instruction* instruction)
+void CPU::Instruction_NOP()
 {
 	EMU::Cycle(1);
 }
 
-void CPU::Instruction_LD(const Instruction* instruction)
+void CPU::Instruction_LD()
 {
 	EMU::Cycle(1);
 
-	if (instruction->mode == AM_R_HLI || instruction->mode == AM_HLI_R)
+	if (instruction->mode == AddrMode::R_HLI || instruction->mode == AddrMode::HLI_R)
 	{
-		registers.Increment(RT_HL);
+		registers.Increment(RegisterType::HL);
 	}
-	else if (instruction->mode == AM_R_HLD || instruction->mode == AM_HLD_R)
+	else if (instruction->mode == AddrMode::R_HLD || instruction->mode == AddrMode::HLD_R)
 	{
-		registers.Decrement(RT_HL);
+		registers.Decrement(RegisterType::HL);
 	}
 
 	if (mem_dest_isMem)
 	{
 		EMU::Cycle(1);
 
-		if (Registers::IsWordSize(instruction->reg_2))
+		if (CPU_Registers::IsWordSize(instruction->reg_2))
 		{
 			EMU::GetBUS()->WriteWord(mem_dest, fetched_data);
 			EMU::Cycle(1);
@@ -144,7 +97,7 @@ void CPU::Instruction_LD(const Instruction* instruction)
 		return;
 	}
 
-	if (instruction->mode == AM_HL_SPD)
+	if (instruction->mode == AddrMode::HL_SPD)
 	{
 		EMU::Cycle(1);
 
@@ -162,7 +115,7 @@ void CPU::Instruction_LD(const Instruction* instruction)
 	registers.Write(instruction->reg_1, fetched_data);
 }
 
-void CPU::Instruction_LDH(const Instruction* instruction)
+void CPU::Instruction_LDH()
 {
 	EMU::Cycle(1);
 
@@ -178,7 +131,7 @@ void CPU::Instruction_LDH(const Instruction* instruction)
 	registers.Write(instruction->reg_1, fetched_data);
 }
 
-void CPU::Instruction_INC(const Instruction* instruction)
+void CPU::Instruction_INC()
 {
 	EMU::Cycle(1);
 
@@ -200,7 +153,7 @@ void CPU::Instruction_INC(const Instruction* instruction)
 		registers.Write(instruction->reg_1, newValue & 0xFFFF);
 	}
 
-	if (isWordReg && instruction->mode != AM_MR)
+	if (isWordReg && instruction->mode != AddrMode::MR)
 	{
 		return;
 	}
@@ -210,7 +163,7 @@ void CPU::Instruction_INC(const Instruction* instruction)
 	registers.SetFlags(zFlag, 0, hFlag, -1);
 }
 
-void CPU::Instruction_DEC(const Instruction* instruction)
+void CPU::Instruction_DEC()
 {
 	EMU::Cycle(1);
 
@@ -232,7 +185,7 @@ void CPU::Instruction_DEC(const Instruction* instruction)
 		registers.Write(instruction->reg_1, newValue & 0xFFFF);
 	}
 
-	if (isWordReg && instruction->mode != AM_MR)
+	if (isWordReg && instruction->mode != AddrMode::MR)
 	{
 		return;
 	}
@@ -242,7 +195,7 @@ void CPU::Instruction_DEC(const Instruction* instruction)
 	registers.SetFlags(zFlag, 1, hFlag, -1);
 }
 
-void CPU::Instruction_ADD(const Instruction* instruction)
+void CPU::Instruction_ADD()
 {
 	EMU::Cycle(1);
 
@@ -257,7 +210,7 @@ void CPU::Instruction_ADD(const Instruction* instruction)
 	{
 		EMU::Cycle(1);
 
-		if (instruction->reg_1 == RT_SP)
+		if (instruction->reg_1 == RegisterType::SP)
 		{
 			EMU::Cycle(1);
 			newValue = currentValue + (i8)fetched_data;
@@ -276,7 +229,7 @@ void CPU::Instruction_ADD(const Instruction* instruction)
 	registers.SetFlags(isZero, 0, hFlag, cFlag);
 }
 
-void CPU::Instruction_ADC(const Instruction* instruction)
+void CPU::Instruction_ADC()
 {
 	EMU::Cycle(1);
 
@@ -294,14 +247,14 @@ void CPU::Instruction_ADC(const Instruction* instruction)
 	registers.SetFlags(isZero, 0, hFlag, cFlag);
 }
 
-void CPU::Instruction_SUB(const Instruction* instruction)
+void CPU::Instruction_SUB()
 {
 	EMU::Cycle(1);
 
 	const u16 currentValue = registers.Read(instruction->reg_1);
 	u32 newValue = currentValue - fetched_data;
-	
-	if (instruction->type == IN_SBC)
+
+	if (instruction->type == InstrType::SBC)
 	{
 		newValue -= registers.GetCarryFlag();
 	}
@@ -322,7 +275,7 @@ void CPU::Instruction_SUB(const Instruction* instruction)
 	registers.SetFlags(isZero, 1, hFlag, cFlag);
 }
 
-void CPU::Instruction_SBC(const Instruction* instruction)
+void CPU::Instruction_SBC()
 {
 	EMU::Cycle(1);
 
@@ -340,45 +293,45 @@ void CPU::Instruction_SBC(const Instruction* instruction)
 	registers.SetFlags(isZero, 1, hFlag, cFlag);
 }
 
-void CPU::Instruction_RLCA(const Instruction* instruction)
+void CPU::Instruction_RLCA()
 {
 	EMU::Cycle(1);
 
-	const u8 currentValue = registers.Read(RT_A);
+	const u8 currentValue = registers.Read(RegisterType::A);
 	const u8 bitZero = (currentValue & 0x80) > 0;
 	const u8 newValue = (currentValue << 1) | bitZero;
 
-	registers.Write(RT_A, newValue);
+	registers.Write(RegisterType::A, newValue);
 	registers.SetFlags(0, 0, 0, bitZero);
 }
 
-void CPU::Instruction_RRCA(const Instruction* instruction)
+void CPU::Instruction_RRCA()
 {
 	EMU::Cycle(1);
 
-	const u8 currentValue = registers.Read(RT_A);
+	const u8 currentValue = registers.Read(RegisterType::A);
 	const u8 bitZero = currentValue & 0x1;
 	u8 newValue = currentValue >> 1;
 	newValue |= bitZero << 7;
 
-	registers.Write(RT_A, newValue);
+	registers.Write(RegisterType::A, newValue);
 	registers.SetFlags(0, 0, 0, bitZero);
 }
 
-void CPU::Instruction_JP_JR(const Instruction* instruction)
+void CPU::Instruction_JP_JR()
 {
 	EMU::Cycle(1);
 
-	if (instruction->mode == AM_R)
+	if (instruction->mode == AddrMode::R)
 	{
 		const u16 jumpAddress = registers.Read(instruction->reg_1);
-		registers.Write(RT_PC, jumpAddress);
+		registers.SetPC(jumpAddress);
 		return;
 	}
-	
-	if (instruction->mode == AM_D8)
+
+	if (instruction->mode == AddrMode::D8)
 	{
-		const u16 reg_PC = registers.Read(RT_PC);
+		const u16 reg_PC = registers.GetPC();
 		const i8 signedOffset = fetched_data;
 		fetched_data = reg_PC + signedOffset;
 	}
@@ -387,17 +340,17 @@ void CPU::Instruction_JP_JR(const Instruction* instruction)
 
 	if (IsConditionMet(instruction->cond))
 	{
-		registers.Write(RT_PC, jumpAddress);
+		registers.SetPC(jumpAddress);
 
 		EMU::Cycle(1);
 	}
 }
 
-void CPU::Instruction_CALL_RST(const Instruction* instruction)
+void CPU::Instruction_CALL_RST()
 {
 	EMU::Cycle(1);
 
-	if (instruction->type == IN_RST)
+	if (instruction->type == InstrType::RST)
 	{
 		fetched_data = instruction->param;
 	}
@@ -406,19 +359,19 @@ void CPU::Instruction_CALL_RST(const Instruction* instruction)
 
 	if (IsConditionMet(instruction->cond))
 	{
-		const u16 nextInstruction = registers.Read(RT_PC);
+		const u16 nextInstruction = registers.GetPC();
 		Stack_PushWord(nextInstruction);
-		registers.Write(RT_PC, jumpAddress);
+		registers.SetPC(jumpAddress);
 
 		EMU::Cycle(3);
 	}
 }
 
-void CPU::Instruction_RET_RETI(const Instruction* instruction)
+void CPU::Instruction_RET_RETI()
 {
 	EMU::Cycle(2);
 
-	if (instruction->type == IN_RETI)
+	if (instruction->type == InstrType::RETI)
 	{
 		enableInterrupts = true;
 	}
@@ -428,20 +381,20 @@ void CPU::Instruction_RET_RETI(const Instruction* instruction)
 		const u16 jumpAddress = Stack_PopWord();
 		EMU::Cycle(2);
 
-		registers.Write(RT_PC, jumpAddress);
+		registers.SetPC(jumpAddress);
 
-		if (instruction->cond != CT_NONE)
+		if (instruction->cond != CondType::NONE)
 		{
 			EMU::Cycle(1);
 		}
 	}
 }
 
-void CPU::Instruction_EI_DI(const Instruction* instruction)
+void CPU::Instruction_EI_DI()
 {
 	EMU::Cycle(1);
 
-	if (instruction->type == IN_EI)
+	if (instruction->type == InstrType::EI)
 	{
 		enableInterrupts = true;
 		return;
@@ -451,41 +404,41 @@ void CPU::Instruction_EI_DI(const Instruction* instruction)
 	interruptsEnabled = false;
 }
 
-void CPU::Instruction_CB(const Instruction* instruction)
+void CPU::Instruction_CB()
 {
 	EMU::Cycle(2);
 
 	const u8 CB_opcode = (fetched_data >> 3);
 	const u8 bitIndex = (fetched_data >> 3) & 0b111;
 
-	reg_type rt_lookup[] = {
-	RT_B,
-	RT_C,
-	RT_D,
-	RT_E,
-	RT_H,
-	RT_L,
-	RT_HL,
-	RT_A
+	RegisterType rt_lookup[] = {
+	RegisterType::B,
+	RegisterType::C,
+	RegisterType::D,
+	RegisterType::E,
+	RegisterType::H,
+	RegisterType::L,
+	RegisterType::HL,
+	RegisterType::A
 	};
 
-	const reg_type reg = rt_lookup[fetched_data & 0b111];
-	in_type CB_Type;
+	const RegisterType reg = rt_lookup[fetched_data & 0b111];
+	InstrType CB_Type;
 	if (CB_opcode < 8)
 	{
-		CB_Type = (in_type)((u16)in_type::IN_RLC + CB_opcode);
+		CB_Type = (InstrType)((u16)InstrType::RLC + CB_opcode);
 	}
 	else
 	{
-		CB_Type = (in_type)((u16)in_type::IN_BIT + (CB_opcode >> 3) - 1);
+		CB_Type = (InstrType)((u16)InstrType::BIT + (CB_opcode >> 3) - 1);
 	}
 
 	const u16 regValue = registers.Read(reg);
-	const u8 currentValue = reg == RT_HL ? EMU::GetBUS()->ReadByte(regValue) : regValue;
+	const u8 currentValue = reg == RegisterType::HL ? EMU::GetBUS()->ReadByte(regValue) : regValue;
 	u8 newValue = 0;
 	switch (CB_Type)
 	{
-	case IN_RLC:
+	case InstrType::RLC:
 	{
 		const u8 shiftedBit = (currentValue & 0x80) > 0;
 		newValue = (currentValue << 1) | shiftedBit;
@@ -493,7 +446,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_RRC:
+	case InstrType::RRC:
 	{
 		const u8 shiftedBit = (currentValue & 0x1);
 		newValue = (currentValue >> 1) | (shiftedBit << 7);
@@ -501,7 +454,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_RL:
+	case InstrType::RL:
 	{
 		const u8 carryFlag = registers.GetCarryFlag();
 		const u8 shiftedBit = (currentValue & 0x80) > 0;
@@ -510,7 +463,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_RR:
+	case InstrType::RR:
 	{
 		const u8 carryFlag = registers.GetCarryFlag();
 		const u8 shiftedBit = (currentValue & 0x1);
@@ -519,7 +472,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_SLA:
+	case InstrType::SLA:
 	{
 		const u8 shiftedBit = (currentValue & 0x80) > 0;
 		newValue = (currentValue << 1);
@@ -527,7 +480,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_SRA:
+	case InstrType::SRA:
 	{
 		const u8 MSB = (currentValue & 0x80);
 		const u8 shiftedBit = (currentValue & 0x1);
@@ -536,14 +489,14 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_SWAP:
+	case InstrType::SWAP:
 	{
 		newValue = ((currentValue & 0x0F) << 4) | ((currentValue & 0xF0) >> 4);
 
 		registers.SetFlags(newValue == 0, 0, 0, 0);
 		break;
 	}
-	case IN_SRL:
+	case InstrType::SRL:
 	{
 		const u8 shiftedBit = (currentValue & 0x1);
 		newValue = (currentValue >> 1);
@@ -551,17 +504,17 @@ void CPU::Instruction_CB(const Instruction* instruction)
 		registers.SetFlags(newValue == 0, 0, 0, shiftedBit);
 		break;
 	}
-	case IN_RES:
+	case InstrType::RES:
 	{
 		newValue = currentValue & ~(1 << bitIndex);
 		break;
 	}
-	case IN_SET:
+	case InstrType::SET:
 	{
 		newValue = currentValue | (1 << bitIndex);
 		break;
 	}
-	case IN_BIT:
+	case InstrType::BIT:
 	{
 		const u8 bitValue = currentValue & (1 << bitIndex);
 		registers.SetFlags(bitValue == 0, 0, 1, -1);
@@ -574,7 +527,7 @@ void CPU::Instruction_CB(const Instruction* instruction)
 	}
 	}
 
-	if (reg == RT_HL)
+	if (reg == RegisterType::HL)
 	{
 		EMU::GetBUS()->WriteByte(regValue, newValue);
 		EMU::Cycle(1);
@@ -585,26 +538,26 @@ void CPU::Instruction_CB(const Instruction* instruction)
 	}
 }
 
-void CPU::Instruction_AND_OR_XOR(const Instruction* instruction)
+void CPU::Instruction_AND_OR_XOR()
 {
 	EMU::Cycle(1);
 
-	const u8 reg_a_value = registers.Read(RT_A);
+	const u8 reg_a_value = registers.Read(RegisterType::A);
 
 	u8 result = reg_a_value;
 	switch (instruction->type)
 	{
-	case IN_AND:
+	case InstrType::AND:
 	{
 		result &= (fetched_data & 0xFF);
 		break;
 	}
-	case IN_OR:
+	case InstrType::OR:
 	{
 		result |= (fetched_data & 0xFF);
 		break;
 	}
-	case IN_XOR:
+	case InstrType::XOR:
 	{
 		result ^= (fetched_data & 0xFF);
 		break;
@@ -616,15 +569,15 @@ void CPU::Instruction_AND_OR_XOR(const Instruction* instruction)
 	}
 	}
 
-	registers.Write(RT_A, result);
-	registers.SetFlags(result == 0, 0, instruction->type == IN_AND, 0);
+	registers.Write(RegisterType::A, result);
+	registers.SetFlags(result == 0, 0, instruction->type == InstrType::AND, 0);
 }
 
-void CPU::Instruction_CP(const Instruction* instruction)
+void CPU::Instruction_CP()
 {
 	EMU::Cycle(1);
 
-	const u8 reg_a_value = registers.Read(RT_A);
+	const u8 reg_a_value = registers.Read(RegisterType::A);
 
 	const i16 result = (i16)reg_a_value - (i16)fetched_data;
 	const i16 hResult = (i16)(reg_a_value & 0x0F) - (i16)(fetched_data & 0x0F);
@@ -635,11 +588,11 @@ void CPU::Instruction_CP(const Instruction* instruction)
 	registers.SetFlags(result == 0, 1, hFlag, cFlag);
 }
 
-void CPU::Instruction_PUSH_POP(const Instruction* instruction)
+void CPU::Instruction_PUSH_POP()
 {
 	EMU::Cycle(1);
 
-	if (instruction->type == IN_PUSH)
+	if (instruction->type == InstrType::PUSH)
 	{
 		Stack_PushWord(registers.Read(instruction->reg_1));
 		EMU::Cycle(3);
@@ -649,7 +602,7 @@ void CPU::Instruction_PUSH_POP(const Instruction* instruction)
 		const u16 poppedValue = Stack_PopWord();
 		EMU::Cycle(2);
 
-		if (instruction->reg_1 == RT_AF)
+		if (instruction->reg_1 == RegisterType::AF)
 		{
 			registers.Write(instruction->reg_1, poppedValue & 0xFFF0);
 		}
@@ -660,28 +613,28 @@ void CPU::Instruction_PUSH_POP(const Instruction* instruction)
 	}
 }
 
-void CPU::Instruction_STOP(const Instruction* instruction)
+void CPU::Instruction_STOP()
 {
 	// TODO
 }
 
-void CPU::Instruction_HALT(const Instruction* instruction)
+void CPU::Instruction_HALT()
 {
 	halted = true;
-	
+
 	// TODO handle interrupts
 }
 
-void CPU::Instruction_RLA_RRA(const Instruction* instruction)
+void CPU::Instruction_RLA_RRA()
 {
 	EMU::Cycle(1);
 
-	const u8 reg_a = registers.Read(RT_A);
+	const u8 reg_a = registers.Read(RegisterType::A);
 	const u8 cFlag = registers.GetCarryFlag();
 
 	u8 newReg_a;
 	u8 newCFlag;
-	if (instruction->type == IN_RLA)
+	if (instruction->type == InstrType::RLA)
 	{
 		newCFlag = (reg_a & 0x80) > 0;
 		newReg_a = reg_a << 1 | cFlag;
@@ -692,24 +645,24 @@ void CPU::Instruction_RLA_RRA(const Instruction* instruction)
 		newReg_a = (reg_a >> 1) | (cFlag << 7);
 	}
 
-	registers.Write(RT_A, newReg_a);
+	registers.Write(RegisterType::A, newReg_a);
 	registers.SetFlags(0, 0, 0, newCFlag);
 }
 
-void CPU::Instruction_CPL(const Instruction* instruction)
+void CPU::Instruction_CPL()
 {
 	EMU::Cycle(1);
 
-	const u8 reg_a = registers.Read(RT_A);
-	registers.Write(RT_A, ~reg_a);
+	const u8 reg_a = registers.Read(RegisterType::A);
+	registers.Write(RegisterType::A, ~reg_a);
 	registers.SetFlags(-1, 1, 1, -1);
 }
 
-void CPU::Instruction_DAA(const Instruction* instruction)
+void CPU::Instruction_DAA()
 {
 	EMU::Cycle(1);
 
-	const u8 reg_a = registers.Read(RT_A);
+	const u8 reg_a = registers.Read(RegisterType::A);
 	const u8 subFlag = registers.GetSubtractionFlag();
 	const u8 hFlag = registers.GetHalfCarryFlag();
 	u8 cFlag = 0;
@@ -729,15 +682,15 @@ void CPU::Instruction_DAA(const Instruction* instruction)
 
 	const u8 result = (reg_a + (subFlag ? -correction : correction)) & 0xFF;
 
-	registers.Write(RT_A, result);
+	registers.Write(RegisterType::A, result);
 	registers.SetFlags(result == 0, -1, 0, cFlag);
 }
 
-void CPU::Instruction_SCF_CCF(const Instruction* instruction)
+void CPU::Instruction_SCF_CCF()
 {
 	EMU::Cycle(1);
 
-	const u8 cFlag = instruction->type == IN_SCF ? 1 : registers.GetCarryFlag() == 0;
+	const u8 cFlag = instruction->type == InstrType::SCF ? 1 : registers.GetCarryFlag() == 0;
 
 	registers.SetFlags(-1, 0, 0, cFlag);
 }

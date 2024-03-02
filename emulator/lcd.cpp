@@ -97,7 +97,7 @@ void LCD::IncrementLY()
 
 		if (Get_Int_Src_Enabled(LCDS_Int_Src::LYC))
 		{
-			EMU::GetCPU()->RequestInterrupt(IT_LCD_Stat);
+			EMU::GetCPU()->RequestInterrupt(IntType::IT_LCD_Stat);
 		}
 	}
 	else

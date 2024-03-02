@@ -5,22 +5,6 @@
 
 namespace GB
 {
-	enum class LCD_Mode : u8
-	{
-		HBLANK = 0,
-		VBLANK,
-		OAM,
-		XFER
-	};
-
-	enum class LCDS_Int_Src : u8
-	{
-		HBLANK = 1 << 3,
-		VBLANK = 1 << 4,
-		OAM = 1 << 5,
-		LYC = 1 << 6
-	};
-
 	class LCD
 	{
 

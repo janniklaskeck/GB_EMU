@@ -28,7 +28,7 @@ void Timer::Tick(const u32 cycleAmount)
 			if (tima == 0xFF)
 			{
 				tima = tma;
-				EMU::GetEMU()->GetCPU()->RequestInterrupt(IT_Timer);
+				EMU::GetEMU()->GetCPU()->RequestInterrupt(IntType::IT_Timer);
 			}
 			else
 			{
